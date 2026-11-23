@@ -3,7 +3,7 @@
 **Version**: 2
 **Date**: 2026-11-23
 **Status**: Draft for prototype implementation
-**Supersedes**: [v1](<doc/design document/v1.md>)
+**Supersedes**: [DESIGN_v1.md](doc/designdoc/DESIGN_v1.md)
 
 From this version on, source code, configuration files, and design documents are written in English.
 
@@ -48,8 +48,8 @@ On one Ubuntu x86 host, VirtHouse must be able to:
 ## 2. Repository layout
 
 ```
-design.md                         Current design (version number is inside the file)
-doc/design document/              Older versions only (v1.md, v2.md, …)
+DESIGN_v2.md                      Current design
+doc/designdoc/                    Older design documents (DESIGN_v1.md, …)
 backend/virthouse/                FastAPI process: API, system config, VM lifecycle, QMP
 frontend/                         WebUI
 config/system.yaml                Process settings for this host
@@ -310,4 +310,4 @@ noVNC is a modal or its own page.
 
 ---
 
-The current design is this file, `design.md`, at the repository root. The version number stays in the header (`Version: 2`). When it is replaced, move this file into `doc/design document/` and name it with that version (`v2.md`, `v3.md`, and so on). Leave the new text in `design.md`. Do not edit files already in `doc/design document/`.
+The current design is `DESIGN_v2.md` at the repository root. When it is replaced, move that file into `doc/designdoc/` and leave the new version at the root as `DESIGN_v3.md`. Do not edit files already in `doc/designdoc/`.
