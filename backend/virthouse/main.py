@@ -8,12 +8,15 @@ from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 
 from virthouse import __version__
 from virthouse.api.v1 import api_v1_router
 from virthouse.config import load_config
 from virthouse.config.models import SystemConfig
+from virthouse.vm.errors import VmError, VmNotFound
+from virthouse.vm.manager import VmManager
 
 logging.basicConfig(
     level=logging.INFO,
@@ -29,6 +32,7 @@ def create_app(config: SystemConfig | None = None) -> FastAPI:
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         cfg = config if config is not None else load_config()
         app.state.config = cfg
+        app.state.vms = VmManager(cfg)
         logger.info(
             "VirtHouse %s ready (qemu=%s, overlays=%s)",
             __version__,
@@ -36,6 +40,7 @@ def create_app(config: SystemConfig | None = None) -> FastAPI:
             cfg.paths.overlays,
         )
         yield
+        await app.state.vms.shutdown()
 
     app = FastAPI(
         title="VirtHouse",
@@ -44,6 +49,15 @@ def create_app(config: SystemConfig | None = None) -> FastAPI:
         lifespan=lifespan,
     )
     app.include_router(api_v1_router)
+
+    @app.exception_handler(VmNotFound)
+    async def vm_not_found(_request: Request, exc: VmNotFound) -> JSONResponse:
+        return JSONResponse(status_code=404, content={"detail": str(exc)})
+
+    @app.exception_handler(VmError)
+    async def vm_error(_request: Request, exc: VmError) -> JSONResponse:
+        return JSONResponse(status_code=400, content={"detail": str(exc)})
+
     return app
 
 

@@ -3,7 +3,7 @@
 #   export VIRTHOUSE_CONFIG=$PWD/config/local.yaml
 #
 # Example override of the VirtHouse process settings. Same shape as config/system.yaml.
-# Base images are not listed here. Image inventory is owned by image management (DESIGN_v3.md section 3).
+# Base images are not listed here. Image inventory is owned by image management (DESIGN_v4.md section 3).
 
 paths:
   isos: ~/virthouse/isos

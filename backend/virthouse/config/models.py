@@ -50,7 +50,7 @@ class SystemConfig(BaseModel):
     """VirtHouse process settings (paths, qemu binary, host policy).
 
     Base images are not listed here. Image storage and metadata live under
-    DESIGN_v3.md section 3 (Image management).
+    DESIGN_v4.md section 3 (Image management).
     """
 
     paths: PathsConfig = Field(default_factory=PathsConfig)

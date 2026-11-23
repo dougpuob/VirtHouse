@@ -1,4 +1,4 @@
-"""Config API (DESIGN_v3.md section 11 — Config)."""
+"""Config API (DESIGN_v4.md section 11 — Config)."""
 
 from __future__ import annotations
 
