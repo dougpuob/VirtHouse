@@ -1,0 +1,48 @@
+# VirtHouse system configuration
+# Override with VIRTHOUSE_CONFIG=/path/to/config.yaml
+
+paths:
+  isos: /var/lib/qemu-manager/isos
+  bases: /var/lib/qemu-manager/bases
+  work: /var/lib/qemu-manager/work
+  overlays: /var/lib/qemu-manager/overlays
+  qmp: /var/lib/qemu-manager/qmp
+
+qemu:
+  binary: qemu-system-x86_64
+  # Extra global args appended to every VM (optional)
+  extra_args: []
+
+resources:
+  # Host reserve buffer before allocating a new VM
+  reserve_memory_mb: 2048
+  reserve_cpus: 2
+  # Soft caps for a single VM (0 = no soft cap)
+  max_vm_memory_mb: 0
+  max_vm_cpus: 0
+
+network:
+  # Base for per-VM subnets; each VM gets an offset
+  subnet_base: "192.168.100.0/24"
+  guest_gateway: "192.168.100.1"
+  guest_ip: "192.168.100.2"
+
+timeouts:
+  process_start_sec: 30
+  basic_ready_sec: 60
+  system_ready_linux_sec: 180
+  system_ready_windows_sec: 300
+  overall_sec: 600
+
+server:
+  host: "0.0.0.0"
+  port: 8080
+
+# Registered base images (name -> relative filename under paths.bases)
+base_images: {}
+# Example:
+# base_images:
+#   ubuntu-22.04:
+#     file: ubuntu-22.04.qcow2
+#     os_type: linux
+#     description: "Ubuntu 22.04 clean base"
