@@ -12,13 +12,16 @@ from virthouse.config.models import SystemConfig
 from virthouse.main import create_app
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_YAML = REPO_ROOT / "config" / "default.yaml"
+SYSTEM_YAML = REPO_ROOT / "config" / "system.yaml"
 
 
 def test_load_default_config() -> None:
-    cfg = load_config(DEFAULT_YAML)
+    cfg = load_config(SYSTEM_YAML)
     assert isinstance(cfg, SystemConfig)
-    assert cfg.paths.overlays.endswith("overlays")
+    home = Path.home()
+    assert cfg.paths.overlays == str(home / "virthouse" / "overlays")
+    assert cfg.paths.bases == str(home / "virthouse" / "bases")
+    assert "~" not in cfg.paths.isos
     assert cfg.qemu.binary == "qemu-system-x86_64"
     assert cfg.timeouts.overall_sec == 600
     assert cfg.server.port == 8080
@@ -30,7 +33,7 @@ def test_load_missing_file(tmp_path: Path) -> None:
 
 
 def test_health_and_config_endpoints() -> None:
-    cfg = load_config(DEFAULT_YAML)
+    cfg = load_config(SYSTEM_YAML)
     app = create_app(config=cfg)
     with TestClient(app) as client:
         health = client.get("/api/v1/health")
@@ -42,6 +45,7 @@ def test_health_and_config_endpoints() -> None:
         body = config_resp.json()
         assert body["qemu"]["binary"] == cfg.qemu.binary
         assert body["paths"]["bases"] == cfg.paths.bases
+        assert "base_images" not in body
 
         vms = client.get("/api/v1/vms")
         assert vms.status_code == 200

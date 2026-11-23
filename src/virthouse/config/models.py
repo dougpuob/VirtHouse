@@ -2,15 +2,25 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from pathlib import Path
+
+from pydantic import BaseModel, Field, field_validator
 
 
 class PathsConfig(BaseModel):
-    isos: str = "/var/lib/qemu-manager/isos"
-    bases: str = "/var/lib/qemu-manager/bases"
-    work: str = "/var/lib/qemu-manager/work"
-    overlays: str = "/var/lib/qemu-manager/overlays"
-    qmp: str = "/var/lib/qemu-manager/qmp"
+    isos: str = "~/virthouse/isos"
+    bases: str = "~/virthouse/bases"
+    work: str = "~/virthouse/work"
+    overlays: str = "~/virthouse/overlays"
+    qmp: str = "~/virthouse/qmp"
+
+    @field_validator("*", mode="before")
+    @classmethod
+    def expand_user(cls, value: object) -> object:
+        """Expand ``~`` so runtime paths sit under the current user's home."""
+        if isinstance(value, str):
+            return str(Path(value).expanduser())
+        return value
 
 
 class QemuConfig(BaseModel):
@@ -44,14 +54,12 @@ class ServerConfig(BaseModel):
     port: int = 8080
 
 
-class BaseImageEntry(BaseModel):
-    file: str
-    os_type: str = "linux"
-    description: str = ""
-
-
 class SystemConfig(BaseModel):
-    """Top-level system configuration (DESIGN.md §10.1)."""
+    """VirtHouse process settings (paths, qemu binary, host policy).
+
+    Base images are not listed here. Image storage and metadata live under
+    DESIGN.md section 3 (Image management).
+    """
 
     paths: PathsConfig = Field(default_factory=PathsConfig)
     qemu: QemuConfig = Field(default_factory=QemuConfig)
@@ -59,4 +67,3 @@ class SystemConfig(BaseModel):
     network: NetworkConfig = Field(default_factory=NetworkConfig)
     timeouts: TimeoutsConfig = Field(default_factory=TimeoutsConfig)
     server: ServerConfig = Field(default_factory=ServerConfig)
-    base_images: dict[str, BaseImageEntry] = Field(default_factory=dict)

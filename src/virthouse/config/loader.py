@@ -14,13 +14,13 @@ logger = logging.getLogger(__name__)
 
 ENV_CONFIG_PATH = "VIRTHOUSE_CONFIG"
 
-# Repo-relative default: <repo>/config/default.yaml
+# Built-in system settings: <repo>/config/system.yaml
 _REPO_ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_CONFIG_PATH = _REPO_ROOT / "config" / "default.yaml"
+DEFAULT_CONFIG_PATH = _REPO_ROOT / "config" / "system.yaml"
 
 
 def resolve_config_path(explicit: str | Path | None = None) -> Path:
-    """Resolve config file path: explicit arg > env > default.yaml."""
+    """Resolve config file path: explicit arg > env > config/system.yaml."""
     if explicit is not None:
         return Path(explicit).expanduser().resolve()
 

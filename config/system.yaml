@@ -1,12 +1,14 @@
-# VirtHouse system configuration
-# Override with VIRTHOUSE_CONFIG=/path/to/config.yaml
+# VirtHouse 這個程式自己的設定。
+# 整台機器一份。不是某一台 VM 的規格，也不是 base image 清單。
+# 不指定別的檔時，程式讀這一份。要換檔：VIRTHOUSE_CONFIG=/path/to/file.yaml
 
 paths:
-  isos: /var/lib/qemu-manager/isos
-  bases: /var/lib/qemu-manager/bases
-  work: /var/lib/qemu-manager/work
-  overlays: /var/lib/qemu-manager/overlays
-  qmp: /var/lib/qemu-manager/qmp
+  # 展開後在目前這個使用者的 home 底下
+  isos: ~/virthouse/isos
+  bases: ~/virthouse/bases
+  work: ~/virthouse/work
+  overlays: ~/virthouse/overlays
+  qmp: ~/virthouse/qmp
 
 qemu:
   binary: qemu-system-x86_64
@@ -37,12 +39,3 @@ timeouts:
 server:
   host: "0.0.0.0"
   port: 8080
-
-# Registered base images (name -> relative filename under paths.bases)
-base_images: {}
-# Example:
-# base_images:
-#   ubuntu-22.04:
-#     file: ubuntu-22.04.qcow2
-#     os_type: linux
-#     description: "Ubuntu 22.04 clean base"

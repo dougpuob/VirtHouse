@@ -1,13 +1,16 @@
 # Copy to local.yaml and adjust for development.
 #   cp config/local.example.yaml config/local.yaml
 #   export VIRTHOUSE_CONFIG=$PWD/config/local.yaml
+#
+# 這是 VirtHouse 程式設定的覆寫範例，格式與 config/system.yaml 相同。
+# 這裡不列 base image。Image 由 DESIGN.md 第 3 節的管理流程負責。
 
 paths:
-  isos: ./data/isos
-  bases: ./data/bases
-  work: ./data/work
-  overlays: ./data/overlays
-  qmp: ./data/qmp
+  isos: ~/virthouse/isos
+  bases: ~/virthouse/bases
+  work: ~/virthouse/work
+  overlays: ~/virthouse/overlays
+  qmp: ~/virthouse/qmp
 
 qemu:
   binary: qemu-system-x86_64
@@ -34,5 +37,3 @@ timeouts:
 server:
   host: "127.0.0.1"
   port: 8080
-
-base_images: {}
