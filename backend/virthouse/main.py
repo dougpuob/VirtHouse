@@ -52,9 +52,9 @@ app = create_app()
 
 def run() -> None:
     """CLI entry: `virthouse` or `python -m virthouse`."""
-    cfg = load_config()
-    host = os.environ.get("VIRTHOUSE_HOST", cfg.server.host)
-    port = int(os.environ.get("VIRTHOUSE_PORT", str(cfg.server.port)))
+    load_config()
+    host = os.environ.get("VIRTHOUSE_HOST", "0.0.0.0")
+    port = int(os.environ.get("VIRTHOUSE_PORT", "8080"))
     uvicorn.run(
         "virthouse.main:app",
         host=host,

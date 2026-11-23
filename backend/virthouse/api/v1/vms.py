@@ -1,4 +1,4 @@
-"""VM API stubs — implemented in a later stage (DESIGN_v2.md section 11 — VM)."""
+"""VM API stubs — implemented in a later stage (DESIGN_v3.md section 11 — VM)."""
 
 from __future__ import annotations
 

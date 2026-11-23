@@ -3,7 +3,7 @@
 #   export VIRTHOUSE_CONFIG=$PWD/config/local.yaml
 #
 # Example override of the VirtHouse process settings. Same shape as config/system.yaml.
-# Base images are not listed here. Image inventory is owned by image management (DESIGN_v2.md section 3).
+# Base images are not listed here. Image inventory is owned by image management (DESIGN_v3.md section 3).
 
 paths:
   isos: ~/virthouse/isos
@@ -14,7 +14,6 @@ paths:
 
 qemu:
   binary: qemu-system-x86_64
-  extra_args: []
 
 resources:
   reserve_memory_mb: 1024
@@ -24,8 +23,6 @@ resources:
 
 network:
   subnet_base: "192.168.100.0/24"
-  guest_gateway: "192.168.100.1"
-  guest_ip: "192.168.100.2"
 
 timeouts:
   process_start_sec: 30
@@ -33,7 +30,3 @@ timeouts:
   system_ready_linux_sec: 180
   system_ready_windows_sec: 300
   overall_sec: 600
-
-server:
-  host: "127.0.0.1"
-  port: 8080

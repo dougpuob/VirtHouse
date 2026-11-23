@@ -12,8 +12,6 @@ paths:
 
 qemu:
   binary: qemu-system-x86_64
-  # Extra global args appended to every VM (optional)
-  extra_args: []
 
 resources:
   # Host reserve buffer before allocating a new VM
@@ -24,10 +22,8 @@ resources:
   max_vm_cpus: 0
 
 network:
-  # Base for per-VM subnets; each VM gets an offset
+  # First subnet handed out. A VM's address and gateway are assigned at start.
   subnet_base: "192.168.100.0/24"
-  guest_gateway: "192.168.100.1"
-  guest_ip: "192.168.100.2"
 
 timeouts:
   process_start_sec: 30
@@ -35,7 +31,3 @@ timeouts:
   system_ready_linux_sec: 180
   system_ready_windows_sec: 300
   overall_sec: 600
-
-server:
-  host: "0.0.0.0"
-  port: 8080

@@ -25,7 +25,6 @@ class PathsConfig(BaseModel):
 
 class QemuConfig(BaseModel):
     binary: str = "qemu-system-x86_64"
-    extra_args: list[str] = Field(default_factory=list)
 
 
 class ResourcesConfig(BaseModel):
@@ -37,8 +36,6 @@ class ResourcesConfig(BaseModel):
 
 class NetworkConfig(BaseModel):
     subnet_base: str = "192.168.100.0/24"
-    guest_gateway: str = "192.168.100.1"
-    guest_ip: str = "192.168.100.2"
 
 
 class TimeoutsConfig(BaseModel):
@@ -49,16 +46,11 @@ class TimeoutsConfig(BaseModel):
     overall_sec: int = 600
 
 
-class ServerConfig(BaseModel):
-    host: str = "0.0.0.0"
-    port: int = 8080
-
-
 class SystemConfig(BaseModel):
     """VirtHouse process settings (paths, qemu binary, host policy).
 
     Base images are not listed here. Image storage and metadata live under
-    DESIGN_v2.md section 3 (Image management).
+    DESIGN_v3.md section 3 (Image management).
     """
 
     paths: PathsConfig = Field(default_factory=PathsConfig)
@@ -66,4 +58,3 @@ class SystemConfig(BaseModel):
     resources: ResourcesConfig = Field(default_factory=ResourcesConfig)
     network: NetworkConfig = Field(default_factory=NetworkConfig)
     timeouts: TimeoutsConfig = Field(default_factory=TimeoutsConfig)
-    server: ServerConfig = Field(default_factory=ServerConfig)
