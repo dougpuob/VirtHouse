@@ -1,9 +1,9 @@
-# VirtHouse 這個程式自己的設定。
-# 整台機器一份。不是某一台 VM 的規格，也不是 base image 清單。
-# 不指定別的檔時，程式讀這一份。要換檔：VIRTHOUSE_CONFIG=/path/to/file.yaml
+# Settings for the VirtHouse process itself.
+# One file per host. This is not a VM spec and not a base-image inventory.
+# Loaded when no other file is given. Override with VIRTHOUSE_CONFIG=/path/to/file.yaml
 
 paths:
-  # 展開後在目前這個使用者的 home 底下
+  # Expanded under the current user's home
   isos: ~/virthouse/isos
   bases: ~/virthouse/bases
   work: ~/virthouse/work

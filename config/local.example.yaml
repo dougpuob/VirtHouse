@@ -2,8 +2,8 @@
 #   cp config/local.example.yaml config/local.yaml
 #   export VIRTHOUSE_CONFIG=$PWD/config/local.yaml
 #
-# 這是 VirtHouse 程式設定的覆寫範例，格式與 config/system.yaml 相同。
-# 這裡不列 base image。Image 由 DESIGN.md 第 3 節的管理流程負責。
+# Example override of the VirtHouse process settings. Same shape as config/system.yaml.
+# Base images are not listed here. Image inventory is owned by image management (design.md section 3).
 
 paths:
   isos: ~/virthouse/isos

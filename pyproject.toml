@@ -27,11 +27,12 @@ dev = [
 virthouse = "virthouse.main:run"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/virthouse"]
+packages = ["backend/virthouse"]
 
 [tool.hatch.build.targets.wheel.sources]
-"src/virthouse" = "virthouse"
+"backend" = ""
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+pythonpath = ["backend"]

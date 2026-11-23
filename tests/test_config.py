@@ -7,12 +7,16 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from virthouse.config.loader import load_config
+from virthouse.config.loader import DEFAULT_CONFIG_PATH, load_config
 from virthouse.config.models import SystemConfig
 from virthouse.main import create_app
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SYSTEM_YAML = REPO_ROOT / "config" / "system.yaml"
+
+
+def test_builtin_config_path_is_repo_system_yaml() -> None:
+    assert DEFAULT_CONFIG_PATH == REPO_ROOT / "config" / "system.yaml"
 
 
 def test_load_default_config() -> None:
