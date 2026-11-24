@@ -1,0 +1,12 @@
+# Builds and usable images.
+# This file is not process settings. Those stay in config/system.yaml.
+# builds: one entry per Packer build, with that build's status.
+# images: disks a machine may start from, and whether each one is usable.
+# file is the name inside the bases directory.
+
+builds: []
+
+images:
+  - name: ubuntu2404-q35
+    file: ubuntu2404-q35.qcow2
+    status: usable

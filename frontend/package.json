@@ -1,0 +1,19 @@
+{
+  "name": "virthouse-ui",
+  "private": true,
+  "description": "VirtHouse WebUI. The noVNC page is served by the backend at /ui/vnc.html.",
+  "scripts": {
+    "build": "node build-novnc.mjs && node build-ui.mjs",
+    "build:ui": "node build-ui.mjs"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^5.5.2",
+    "@novnc/novnc": "1.6.0",
+    "antd": "^5.22.6",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12"
+  }
+}

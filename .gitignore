@@ -14,3 +14,4 @@ venv/
 *.qcow2
 *.img
 .DS_Store
+node_modules/

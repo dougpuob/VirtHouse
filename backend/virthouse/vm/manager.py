@@ -3,35 +3,63 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
+import os
 import signal
 import subprocess
 import uuid
 from pathlib import Path
 
 from virthouse.config.models import SystemConfig
+from virthouse.history.store import HistoryStore
 from virthouse.vm import overlay as overlay_mod
 from virthouse.vm import process as process_mod
 from virthouse.vm import qmp as qmp_mod
 from virthouse.vm.errors import VmError, VmNotFound
-from virthouse.vm.models import RuntimeRecord, VmSpec, VmStatusView
+from virthouse.vm.models import QmpCommandResult, QmpView, RuntimeRecord, VmSpec, VmStatusView
 from virthouse.vm.network import assign_subnet, next_ordinal
-from virthouse.vm.resources import ensure_capacity, read_host_resources
+from virthouse.vm.resources import HostResources, ensure_capacity, read_host_resources, read_host_view
 
 logger = logging.getLogger(__name__)
 
 _VNC_BASE = 5900
+
+
+def _success_message(action: str, record: RuntimeRecord, spec: VmSpec) -> str:
+    if action == "vm.reset":
+        return f"Reset {record.name}. Started again from {spec.base_image}."
+    return (
+        f"Started {record.name} from {spec.base_image} "
+        f"with {spec.cpus} CPU and {spec.memory_mb} MB."
+    )
+
+
+def _failure_message(action: str, exc: Exception) -> str:
+    if action == "vm.reset":
+        return f"Reset failed: {exc}"
+    return f"Start failed: {exc}"
 _ACTIVE = {"pending", "starting", "booting", "ready"}
 
 
 class VmManager:
-    def __init__(self, config: SystemConfig) -> None:
+    def __init__(self, config: SystemConfig, history: HistoryStore | None = None) -> None:
         self._config = config
+        self._history = history
         self._records: dict[str, RuntimeRecord] = {}
         self._specs: dict[str, VmSpec] = {}
         self._procs: dict[str, subprocess.Popen] = {}
         self._tasks: dict[str, asyncio.Task] = {}
+        self._generations: dict[str, int] = {}
         self._lock = asyncio.Lock()
+        self._qmp_locks: dict[str, asyncio.Lock] = {}
+
+    def live_subjects(self) -> list[tuple[str, str, int]]:
+        """VMs still in this process, with the generation of their current boot."""
+        return [
+            ("vm", record.id, self._generations.get(record.id, 0))
+            for record in self._records.values()
+        ]
 
     def list(self) -> list[RuntimeRecord]:
         return list(self._records.values())
@@ -41,6 +69,79 @@ class VmManager:
             return self._records[vm_id]
         except KeyError as exc:
             raise VmNotFound(f"vm not found: {vm_id}") from exc
+
+    def host_view(self) -> HostResources:
+        processes = [("virthouse", os.getpid())]
+        processes.extend(
+            (record.name, record.pid)
+            for record in self._records.values()
+            if record.pid and record.status in _ACTIVE
+        )
+        return read_host_view(self._config, processes)
+
+    async def qmp_view(self, vm_id: str) -> QmpView:
+        record = self.get(vm_id)
+        if record.qmp_socket is None:
+            raise VmError("qmp socket is not open")
+        async with self._qmp_lock(vm_id):
+            try:
+                view = await qmp_mod.snapshot(Path(record.qmp_socket))
+            except (OSError, TimeoutError, ConnectionError, RuntimeError, asyncio.TimeoutError) as exc:
+                raise VmError(f"qmp query failed: {exc}") from exc
+        if record.qga_socket:
+            view.guest_agent = await qmp_mod.guest_agent_up(Path(record.qga_socket))
+        return view
+
+    async def qmp_execute(self, vm_id: str, line: str) -> QmpCommandResult:
+        record = self.get(vm_id)
+        if record.qmp_socket is None or record.status not in {"booting", "ready"}:
+            raise VmError("qmp socket is not open")
+        async with self._qmp_lock(vm_id):
+            try:
+                output = await qmp_mod.execute(Path(record.qmp_socket), line)
+            except (OSError, TimeoutError, ConnectionError, RuntimeError, asyncio.TimeoutError, ValueError, json.JSONDecodeError) as exc:
+                raise VmError(str(exc)) from exc
+        return QmpCommandResult(output=output)
+
+    def _next_generation(self, vm_id: str) -> int:
+        generation = self._generations.get(vm_id, 0) + 1
+        self._generations[vm_id] = generation
+        return generation
+
+    def _note(
+        self,
+        *,
+        level: str,
+        action: str,
+        subject_kind: str,
+        message: str,
+        subject_id: str | None = None,
+        subject_name: str | None = None,
+        generation: int = 0,
+        detail: dict[str, object] | None = None,
+    ) -> None:
+        if self._history is None:
+            return
+        try:
+            self._history.record(
+                level=level,
+                action=action,
+                subject_kind=subject_kind,
+                message=message,
+                subject_id=subject_id,
+                subject_name=subject_name,
+                generation=generation,
+                detail=detail,
+            )
+        except Exception:
+            logger.exception("history record failed")
+
+    def _qmp_lock(self, vm_id: str) -> asyncio.Lock:
+        lock = self._qmp_locks.get(vm_id)
+        if lock is None:
+            lock = asyncio.Lock()
+            self._qmp_locks[vm_id] = lock
+        return lock
 
     def status(self, vm_id: str) -> VmStatusView:
         record = self.get(vm_id)
@@ -52,15 +153,26 @@ class VmManager:
         )
 
     async def start(self, spec: VmSpec) -> RuntimeRecord:
-        self._reject_unsupported(spec)
-        async with self._lock:
-            self._ensure_capacity(spec)
-            base = self._resolve_base(spec.base_image)
-            record = self._new_record(spec)
-            self._records[record.id] = record
-            self._specs[record.id] = spec
         try:
-            await self._boot(record, spec, base)
+            self._reject_unsupported(spec)
+            async with self._lock:
+                self._ensure_capacity(spec)
+                base = self._resolve_base(spec.base_image)
+                record = self._new_record(spec)
+                self._records[record.id] = record
+                self._specs[record.id] = spec
+        except VmError as exc:
+            self._note(
+                level="error",
+                action="vm.start",
+                subject_kind="vm",
+                subject_name=spec.name,
+                message=str(exc),
+                detail={"base_image": spec.base_image, "cpus": spec.cpus, "memory_mb": spec.memory_mb},
+            )
+            raise
+        try:
+            await self._boot(record, spec, base, action="vm.start")
         except Exception as exc:
             logger.exception("start vm %s failed", record.id)
             await self._discard(record)
@@ -70,11 +182,22 @@ class VmManager:
     async def delete(self, vm_id: str) -> None:
         record = self.get(vm_id)
         logger.info("delete vm %s", vm_id)
+        self._note(
+            level="information",
+            action="vm.delete",
+            subject_kind="vm",
+            subject_id=record.id,
+            subject_name=record.name,
+            generation=self._generations.get(record.id, 0),
+            message=f"Stopped {record.name} and deleted its overlay.",
+            detail={"overlay": record.overlay},
+        )
         await self._stop_task(vm_id)
         await self._stop_process(record)
         self._delete_files(record)
         self._records.pop(vm_id, None)
         self._specs.pop(vm_id, None)
+        self._generations.pop(vm_id, None)
 
     async def reset(self, vm_id: str) -> RuntimeRecord:
         record = self.get(vm_id)
@@ -87,7 +210,7 @@ class VmManager:
         record.error = None
         record.pid = None
         try:
-            await self._boot(record, spec, base)
+            await self._boot(record, spec, base, action="vm.reset")
         except Exception as exc:
             record.status = "failed"
             record.error = str(exc)
@@ -98,9 +221,10 @@ class VmManager:
         for vm_id in list(self._records):
             await self.delete(vm_id)
 
-    async def _boot(self, record: RuntimeRecord, spec: VmSpec, base: Path) -> None:
+    async def _boot(self, record: RuntimeRecord, spec: VmSpec, base: Path, *, action: str) -> None:
         record.status = "starting"
-        logger.info("start vm %s name=%s base=%s", record.id, spec.name, spec.base_image)
+        generation = self._next_generation(record.id)
+        logger.info("%s vm %s name=%s base=%s", action, record.id, spec.name, spec.base_image)
         overlay = Path(record.overlay or "")
         qmp_socket = Path(record.qmp_socket or "")
         try:
@@ -117,10 +241,36 @@ class VmManager:
             )
             self._procs[record.id] = proc
             record.pid = proc.pid
-        except Exception:
+        except Exception as exc:
+            self._note(
+                level="error",
+                action=action,
+                subject_kind="vm",
+                subject_id=record.id,
+                subject_name=record.name,
+                generation=generation,
+                message=_failure_message(action, exc),
+                detail={"error": str(exc)},
+            )
             await self._stop_process(record)
             self._delete_files(record)
             raise
+        self._note(
+            level="information",
+            action=action,
+            subject_kind="vm",
+            subject_id=record.id,
+            subject_name=record.name,
+            generation=generation,
+            message=_success_message(action, record, spec),
+            detail={
+                "base_image": spec.base_image,
+                "cpus": spec.cpus,
+                "memory_mb": spec.memory_mb,
+                "overlay": record.overlay,
+                "guest_ip": record.guest_ip,
+            },
+        )
         record.status = "booting"
         self._tasks[record.id] = asyncio.create_task(self._watch(record))
 
@@ -140,6 +290,7 @@ class VmManager:
             memory_mb=spec.memory_mb,
             overlay=str(Path(self._config.paths.overlays) / f"{vm_id}.qcow2"),
             qmp_socket=str(Path(self._config.paths.qmp) / f"{vm_id}.sock"),
+            qga_socket=str(Path(self._config.paths.qmp) / f"{vm_id}.qga.sock"),
             vnc_port=self._next_vnc_port(),
             subnet=subnet,
             gateway=gateway,
@@ -193,12 +344,34 @@ class VmManager:
                 if proc is None or proc.poll() is not None:
                     record.status = "failed"
                     record.error = "qemu process exited"
+                    code = None if proc is None else proc.returncode
                     logger.info("vm %s qemu exited", record.id)
+                    self._note(
+                        level="error",
+                        action="vm.exit",
+                        subject_kind="vm",
+                        subject_id=record.id,
+                        subject_name=record.name,
+                        generation=self._generations.get(record.id, 0),
+                        message=f"QEMU exited before the guest was ready. Exit code {code}.",
+                        detail={"exit_code": code},
+                    )
                     return
                 if await self._basic_ready(record):
                     record.status = "ready"
                     record.error = None
                     logger.info("vm %s ready", record.id)
+                    where = f" at {record.guest_ip}" if record.guest_ip else ""
+                    self._note(
+                        level="information",
+                        action="vm.ready",
+                        subject_kind="vm",
+                        subject_id=record.id,
+                        subject_name=record.name,
+                        generation=self._generations.get(record.id, 0),
+                        message=f"Guest is ready{where}.",
+                        detail={"guest_ip": record.guest_ip, "vnc_port": record.vnc_port},
+                    )
                     return
                 if loop.time() - started > limit:
                     await self._mark_timeout(record)
@@ -210,6 +383,16 @@ class VmManager:
             record.status = "failed"
             record.error = str(exc)
             logger.exception("watch vm %s failed", record.id)
+            self._note(
+                level="error",
+                action="vm.exit",
+                subject_kind="vm",
+                subject_id=record.id,
+                subject_name=record.name,
+                generation=self._generations.get(record.id, 0),
+                message=f"Watch failed: {exc}",
+                detail={"error": str(exc)},
+            )
 
     async def _basic_ready(self, record: RuntimeRecord) -> bool:
         if record.qmp_socket is None or record.vnc_port is None:
@@ -233,6 +416,15 @@ class VmManager:
 
     async def _mark_timeout(self, record: RuntimeRecord) -> None:
         logger.info("vm %s basic ready timeout", record.id)
+        self._note(
+            level="error",
+            action="vm.start",
+            subject_kind="vm",
+            subject_id=record.id,
+            subject_name=record.name,
+            generation=self._generations.get(record.id, 0),
+            message="Start failed: basic ready timed out.",
+        )
         await self._stop_process(record)
         self._delete_files(record)
         record.status = "timeout"
@@ -277,3 +469,8 @@ class VmManager:
             log_path = socket_path.with_suffix(".log")
             if log_path.is_file():
                 log_path.unlink()
+        if record.qga_socket:
+            qga_path = Path(record.qga_socket)
+            if qga_path.exists():
+                qga_path.unlink()
+        self._qmp_locks.pop(record.id, None)

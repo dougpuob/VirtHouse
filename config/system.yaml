@@ -9,6 +9,7 @@ paths:
   work: ~/virthouse/work
   overlays: ~/virthouse/overlays
   qmp: ~/virthouse/qmp
+  history: ~/virthouse/history.db
 
 qemu:
   binary: qemu-system-x86_64

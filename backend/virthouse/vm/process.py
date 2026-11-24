@@ -41,11 +41,26 @@ def qemu_argv(
         "virtio-net-pci,netdev=net0",
         "-qmp",
         f"unix:{record.qmp_socket},server,nowait",
-        "-display",
-        "none",
-        "-vnc",
-        f"127.0.0.1:{display}",
     ]
+    if record.qga_socket:
+        args.extend(
+            [
+                "-chardev",
+                f"socket,id=qga0,path={record.qga_socket},server=on,wait=off",
+                "-device",
+                "virtio-serial",
+                "-device",
+                "virtserialport,chardev=qga0,name=org.qemu.guest_agent.0",
+            ]
+        )
+    args.extend(
+        [
+            "-display",
+            "none",
+            "-vnc",
+            f"127.0.0.1:{display}",
+        ]
+    )
     args.extend(extra_args)
     return args
 

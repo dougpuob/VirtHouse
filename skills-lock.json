@@ -1,0 +1,47 @@
+{
+  "version": 2,
+  "skills": {
+    "aws-ami-builder": {
+      "source": "hashicorp/agent-skills",
+      "commit": "5e30fa5c867ba6777c37e4206babfd08049c396f",
+      "sourceType": "github",
+      "skillPath": "plugins/packer/skills/aws-ami-builder/SKILL.md",
+      "computedHash": "d11d6f0cd2d44bad8986b37aed90c29e167f44bc71b8c32ef1a67d278abc621c"
+    },
+    "azure-image-builder": {
+      "source": "hashicorp/agent-skills",
+      "commit": "5e30fa5c867ba6777c37e4206babfd08049c396f",
+      "sourceType": "github",
+      "skillPath": "plugins/packer/skills/azure-image-builder/SKILL.md",
+      "computedHash": "37c4d97724a8059df44a75d114a9e304307ed3607f5922dacbe146de645893b3"
+    },
+    "grill-me": {
+      "source": "mattpocock/skills",
+      "commit": "abeeaf95660ba9e8b7c753eb38f441ca707a8823",
+      "sourceType": "github",
+      "skillPath": "skills/productivity/grill-me/SKILL.md",
+      "computedHash": "ab1acb9fbd9eaee03da254abb8a8de228d1e7a07475fe959da4a5eefa34ea4b9"
+    },
+    "grilling": {
+      "source": "mattpocock/skills",
+      "commit": "abeeaf95660ba9e8b7c753eb38f441ca707a8823",
+      "sourceType": "github",
+      "skillPath": "skills/productivity/grilling/SKILL.md",
+      "computedHash": "485451958784497cd4c4dbea13cb5bbb579da58fac0d0e45f3bcb310fab68ac7"
+    },
+    "push-to-registry": {
+      "source": "hashicorp/agent-skills",
+      "commit": "5e30fa5c867ba6777c37e4206babfd08049c396f",
+      "sourceType": "github",
+      "skillPath": "plugins/packer/skills/push-to-registry/SKILL.md",
+      "computedHash": "a16db6cb2a5dddb003cca24d2acd6af2f7302fd3561779127d38c3246e2e494d"
+    },
+    "windows-builder": {
+      "source": "hashicorp/agent-skills",
+      "commit": "5e30fa5c867ba6777c37e4206babfd08049c396f",
+      "sourceType": "github",
+      "skillPath": "plugins/packer/skills/windows-builder/SKILL.md",
+      "computedHash": "dece9b708d701164dd249631c135361724eba763bf9ce3feb57112d0274a7dfb"
+    }
+  }
+}
