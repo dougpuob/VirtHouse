@@ -13,6 +13,7 @@ class PathsConfig(BaseModel):
     work: str = "~/virthouse/work"
     overlays: str = "~/virthouse/overlays"
     qmp: str = "~/virthouse/qmp"
+    history: str = "~/virthouse/history.db"
 
     @field_validator("*", mode="before")
     @classmethod
@@ -49,8 +50,8 @@ class TimeoutsConfig(BaseModel):
 class SystemConfig(BaseModel):
     """VirtHouse process settings (paths, qemu binary, host policy).
 
-    Base images are not listed here. Image storage and metadata live under
-    DESIGN_v4.md section 3 (Image management).
+    Base images are not listed here. Builds and usable images are recorded
+    in config/images.yaml.
     """
 
     paths: PathsConfig = Field(default_factory=PathsConfig)

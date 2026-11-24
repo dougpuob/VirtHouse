@@ -25,6 +25,7 @@ def test_load_default_config() -> None:
     home = Path.home()
     assert cfg.paths.overlays == str(home / "virthouse" / "overlays")
     assert cfg.paths.bases == str(home / "virthouse" / "bases")
+    assert cfg.paths.history == str(home / "virthouse" / "history.db")
     assert "~" not in cfg.paths.isos
     assert cfg.qemu.binary == "qemu-system-x86_64"
     assert cfg.network.subnet_base == "192.168.100.0/24"

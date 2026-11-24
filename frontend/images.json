@@ -1,0 +1,10 @@
+{
+  "builds": [],
+  "images": [
+    {
+      "name": "ubuntu2404-q35",
+      "file": "ubuntu2404-q35.qcow2",
+      "status": "usable"
+    }
+  ]
+}

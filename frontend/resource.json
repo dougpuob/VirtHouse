@@ -1,0 +1,22 @@
+{
+  "isos": [
+    {
+      "name": "ubuntu-24.04-desktop-amd64.iso",
+      "bytes": 6655619072,
+      "os": "Ubuntu",
+      "edition": "Desktop",
+      "arch": "amd64",
+      "firmware": "uefi",
+      "boots": ["uefi", "bios"]
+    }
+  ],
+  "devices": [
+    {"id": "0000:03:00.0", "name": "Processing accelerator", "kind": "pci", "vendor": "20f8", "device": "2029", "driver": "htx301", "iommu_group": 22},
+    {"id": "0000:04:00.0", "name": "Processing accelerator", "kind": "pci", "vendor": "20f8", "device": "2029", "driver": "htx301", "iommu_group": 23},
+    {"id": "0000:05:00.0", "name": "Processing accelerator", "kind": "pci", "vendor": "20f8", "device": "2029", "driver": "htx301", "iommu_group": 24},
+    {"id": "0000:06:00.0", "name": "Processing accelerator", "kind": "pci", "vendor": "20f8", "device": "2029", "driver": "htx301", "iommu_group": 25},
+    {"id": "0000:09:00.0", "name": "Processing accelerator", "kind": "pci", "vendor": "20f8", "device": "2029", "driver": "htx301", "iommu_group": 26},
+    {"id": "usb:1-2", "name": "ASUSTek AURA LED Controller", "kind": "usb", "vendor": "0b05", "product": "19af", "bus": 1, "port": "2", "driver": "", "iommu_group": null},
+    {"id": "usb:1-7", "name": "Primax wired keyboard", "kind": "usb", "vendor": "0461", "product": "4e6e", "bus": 1, "port": "7", "driver": "usbhid", "iommu_group": null, "host_input": true}
+  ]
+}

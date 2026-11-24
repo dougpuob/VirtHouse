@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>VirtHouse noVNC</title>
+  <link rel="icon" href="/ui/favicon.png?v=80" type="image/png">
+  <style>
+    html, body, #screen { margin: 0; height: 100%; background: #111; }
+    #screen { overflow: hidden; }
+    #status { position: absolute; top: 0.5rem; left: 0.75rem; color: #ddd; }
+  </style>
+</head>
+<body>
+  <div id="status"></div>
+  <div id="screen"></div>
+  <script type="module">
+    import novnc from "./novnc.js?v=3";
+
+    const RFB = novnc.default;
+    const params = new URLSearchParams(location.search);
+    const id = params.get("id");
+    const buildId = params.get("build");
+    const hostDesktop = params.get("host") === "1";
+    const viewOnly = Boolean(buildId);
+    const screen = document.getElementById("screen");
+    const status = document.getElementById("status");
+    if (hostDesktop) {
+      const style = document.createElement("style");
+      style.textContent = "#screen, #screen * { cursor: none !important; }";
+      document.head.appendChild(style);
+    }
+    if (!hostDesktop && !id && !buildId) {
+      status.textContent = "Missing VM id. Open /ui/vnc.html?id=<vm id>.";
+    } else if (typeof RFB !== "function") {
+      status.textContent = "noVNC client failed to load.";
+    } else {
+      const proto = location.protocol === "https:" ? "wss" : "ws";
+      const path = hostDesktop
+        ? "/api/v1/resources/vnc"
+        : buildId
+          ? `/api/v1/builds/${buildId}/vnc`
+          : `/api/v1/vms/${id}/vnc`;
+      const rfb = new RFB(screen, `${proto}://${location.host}${path}`, viewOnly ? { shared: true } : undefined);
+      if (viewOnly) rfb.viewOnly = true;
+      rfb.scaleViewport = true;
+      const api = {
+        rfb,
+        connected: false,
+        canvas() {
+          return screen.querySelector("canvas");
+        },
+      };
+      window.virthouseScreen = api;
+      rfb.addEventListener("connect", () => {
+        api.connected = true;
+      });
+      rfb.addEventListener("disconnect", (event) => {
+        api.connected = false;
+        if (!event.detail.clean) {
+          status.textContent = "VNC connection failed.";
+        }
+      });
+    }
+  </script>
+</body>

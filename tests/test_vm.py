@@ -80,6 +80,12 @@ def test_qemu_commands_use_overlay_and_assigned_address(tmp_path: Path) -> None:
     assert f"file={record.overlay},if=virtio,format=qcow2" in argv
     assert "net=192.168.100.0/24,host=192.168.100.1,dhcpstart=192.168.100.2" in "".join(argv)
     assert argv[-2:] == ["-serial", "none"]
+    assert "virtio-serial" not in argv
+    record.qga_socket = str(tmp_path / "abc.qga.sock")
+    with_agent = qemu_argv("qemu-system-x86_64", record, ["-serial", "none"], kvm=False)
+    assert f"socket,id=qga0,path={record.qga_socket},server=on,wait=off" in with_agent
+    assert "virtserialport,chardev=qga0,name=org.qemu.guest_agent.0" in with_agent
+    assert with_agent[-2:] == ["-serial", "none"]
     assert qemu_img_argv(tmp_path / "base.qcow2", tmp_path / "abc.qcow2") == [
         "qemu-img",
         "create",
